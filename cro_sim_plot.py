@@ -22,6 +22,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.colors
 
+from numba import jit
+
+import datetime
 
 def hsv_bloom(h, x, bp=0.5):
     """
@@ -128,6 +131,34 @@ def psf(psfSz, decay=3):
     return psfZ
 
 
+@jit(nopython=True)
+def update_screen(lens, t, px, py, z, screen, pxHeight, pxWidth, PSF):
+    """
+        Helper function for crt_plot to allow for Numba acceleration.
+    """
+    
+    psfSz = PSF.shape[0]
+
+    # Iterate over all line segments
+    for idx in range(px.size-1):
+        steps = lens[idx]
+
+        dt = t[idx+1] - t[idx]
+    
+        # Iterate over the line interpolation points    
+        for step in range(steps):
+            # Interpolate the values
+            xx = int(px[idx] + (px[idx+1] - px[idx])*step/steps)
+            yy = int(py[idx] + (py[idx+1] - py[idx])*step/steps)
+            zz = z[idx] + (z[idx+1] - z[idx])*step/steps
+            
+            # Update screen matrix if the point is within the screen boundaries
+            if xx >= 0 and yy >= 0 and yy < pxHeight and xx < pxWidth:
+                screen[yy:yy+psfSz, xx:xx+psfSz] += dt/steps*PSF*zz
+            
+    return screen
+
+
 def crt_plot(x, y, t, xRange, yRange, pxWidth, pxHeight=None, z=None,
             oversample_t=3, psfSz=9, psfDecay=3,
             cmap=cmap_color_white(0.45, 0.6, bp=0.8)):
@@ -206,34 +237,15 @@ def crt_plot(x, y, t, xRange, yRange, pxWidth, pxHeight=None, z=None,
     py = (y-yRange[0])/(yRange[1]-yRange[0])*(pxHeight-1)
     
     # Calculate the length of each line segment.
-    # FIXME: Create two vectors and use vector operations. However, this
-    #    operation is not the computational bottleneck.
-    lens = np.zeros(len(px)-1)
-    for idx in range(len(px)-1):
-        lens[idx] = np.sqrt((px[idx+1] - px[idx])**2 + (py[idx+1] - py[idx])**2)
+    lens = np.sqrt((px[1:] - px[0:-1])**2 + (py[1:] - py[0:-1])**2)
     
     # Screen bitmap. Pad with PSF size
     screen = np.zeros((pxHeight+psfSz-1, pxWidth+psfSz-1))
     
     # Iterate over all line segments
-    for idx in range(len(px)-1):
-        # Create time interpolation points
-        dt = t[idx+1]-t[idx]
-        steps = int(np.ceil(lens[idx]*oversample_t))
-        tt = np.linspace(0, dt, steps, endpoint=False)
-    
-        # Interpolate between segment endpoints
-        xx = np.interp(tt, [0, t[idx+1]-t[idx]], [px[idx], px[idx+1]])
-        yy = np.interp(tt, [0, t[idx+1]-t[idx]], [py[idx], py[idx+1]])
-        zz = np.interp(tt, [0, t[idx+1]-t[idx]], [z[idx], z[idx+1]])
-    
-        # Update screen
-        yyint = np.round(yy).astype(int)
-        xxint = np.round(xx).astype(int)
-        for sx, sy, sz in zip(xxint, yyint, zz):
-            if sx >= 0 and sy >= 0 and sy < pxHeight and sx < pxWidth:
-                screen[sy:sy+psfSz, sx:sx+psfSz] += dt/steps*PSF*sz
-     
+    update_screen(np.ceil(lens*oversample_t), t, px, py, z, screen, 
+                  pxHeight, pxWidth, PSF)
+        
     # Remove PSF padding
     screen = screen[psfOff:-psfOff, psfOff:-psfOff]
     

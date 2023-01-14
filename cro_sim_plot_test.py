@@ -24,6 +24,7 @@ import os
 
 import cro_sim_plot
 
+import datetime
 
 plotColorbars = False
 saveFiles = True
@@ -49,7 +50,10 @@ plt.clf()
 
 fig, axs = plt.subplots(1, 1, num=figNr)
 
+start = datetime.datetime.now()
 im = cro_sim_plot.crt_plot(x, y, t, xRange, yRange, pxWidth=2000, psfSz=17)
+stop = datetime.datetime.now()
+print('Time elapsed: {}s'.format((stop-start).total_seconds()))
 
 if plotColorbars:
     fig.colorbar(im[0])
@@ -65,7 +69,7 @@ if saveFiles:
 xRange = (-3, 3)
 yRange = (-1, 1)
 
-y = np.random.randn(50000)*0.2
+y = np.random.randn(500000)*0.2
 x = np.linspace(xRange[0], xRange[1], len(y))
 t = x
 
@@ -78,7 +82,11 @@ plt.clf()
 
 fig, axs = plt.subplots(1, 1, num=figNr)
 
+start = datetime.datetime.now()
 im = cro_sim_plot.crt_plot(x, y, t, xRange, yRange, pxWidth=2000)
+stop = datetime.datetime.now()
+print('Time elapsed: {}s'.format((stop-start).total_seconds()))
+
 fig.colorbar(im[0])
 
 fig.tight_layout()
@@ -111,7 +119,10 @@ plt.clf()
 
 fig, axs = plt.subplots(1, 1, num=figNr)
 
+start = datetime.datetime.now()
 im = cro_sim_plot.crt_plot(x, y, t, xRange, yRange, pxWidth=2000)
+stop = datetime.datetime.now()
+print('Time elapsed: {}s'.format((stop-start).total_seconds()))
 
 if plotColorbars:
     fig.colorbar(im[0])
@@ -149,7 +160,11 @@ plt.clf()
 
 fig, axs = plt.subplots(1, 1, num=figNr)
 
+start = datetime.datetime.now()
 im = cro_sim_plot.crt_plot(x, y, t, xRange, yRange, pxWidth=2000, z=z, psfSz=21)
+stop = datetime.datetime.now()
+print('Time elapsed: {}s'.format((stop-start).total_seconds()))
+
 
 if plotColorbars:
     fig.colorbar(im[0])
@@ -184,7 +199,11 @@ plt.clf()
 
 fig, axs = plt.subplots(1, 1, num=figNr)
 
+start = datetime.datetime.now()
 im = cro_sim_plot.crt_plot(xv, yv, t, xRange, yRange, pxWidth=2000, z=z, psfSz=21)
+stop = datetime.datetime.now()
+print('Time elapsed: {}s'.format((stop-start).total_seconds()))
+
 
 if plotColorbars:
     fig.colorbar(im[0])
@@ -211,7 +230,10 @@ plt.clf()
 
 fig, axs = plt.subplots(1, 1, num=figNr)
 
+start = datetime.datetime.now()
 im = cro_sim_plot.crt_plot(x, y, t, xRange, yRange, pxWidth=2000, psfSz=211, psfDecay=4)
+stop = datetime.datetime.now()
+print('Time elapsed: {}s'.format((stop-start).total_seconds()))
 
 if plotColorbars:
     fig.colorbar(im[0])
